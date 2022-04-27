@@ -45,11 +45,6 @@ def run_1d_row_tp():
     ]
     spec = TensorSpec(parallel_action_list)
 
-    # A reference model using PyTorch
-    set_seed(1)
-    if rank == 0:
-        model_torch = model_builder()
-        model_torch = model_torch.cuda()
     
     # A naive way to set parallel spec for all weights of Linear Op
     for name, p in colo_model.colo_named_parameters():
@@ -59,6 +54,7 @@ def run_1d_row_tp():
             p.set_spec(spec)
 
     colo_model = colo_model.cuda()
+    colo_model.eval()
 
     input_ids = torch.tensor(
         ([12166, 10699, 16752, 4454], [5342, 16471, 817, 16022]),
@@ -72,9 +68,6 @@ def run_1d_row_tp():
     res = colo_model(input_ids).logits
     print(res.torch_tensor())
 
-    if rank == 0:
-        res_torch = model_torch(input_ids).logits
-        print(res_torch)
 
 def run_dist(rank, world_size, port):
     config = dict(parallel=dict(tensor=dict(mode="1d", size=world_size),))
